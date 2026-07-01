@@ -15,6 +15,7 @@ Column::Column(std::string name, size_t width, Column::DataType type) {
     }
 
     this->width = width;
+    this->precision = 0;
     this->type = type;
 }
 
@@ -26,6 +27,14 @@ const size_t Column::getWidth() const {
     return width;
 }
 
+void Column::setPrecision(size_t precision){
+    this->precision = precision;
+}
+
+const size_t Column::getPrecision() const {
+    return precision;
+}
+
 void Column::setType(Column::DataType type){
     this->type = type;
 }
@@ -34,13 +43,23 @@ const Column::DataType Column::getType() const {
     return type;
 }
 
+const size_t Column::getWholePart() const {
+    return width - precision;
+}
+
 std::string Column::columnInfo() const {
     std::ostringstream ss;
-    ss << name << " " << DataTypeName(type) << '(' << width << ')';
+    ss << name << " " << DataTypeName(type);
+    if (type == Column::FLOAT) {
+        ss << '(' << width << ',' << precision << ')';
+    }
+    else {
+        ss << '(' << width << ')';
+    }
     return ss.str();
 }
 
-std::string Column::Trim(const std::string& s) const {
+std::string Column::Trim(const std::string& s) {
     std::string::size_type start = 0;
     while (start < s.size() && std::isspace((unsigned char)s[start])) {
         ++start;
@@ -82,14 +101,49 @@ Column::DataType Column::DetectValueType(const std::string& input){
     return Column::STRING;
 }
 
+size_t Column::DetectPrecision(const std::string& input){
+    std::string s = Trim(input);
+    if (s.empty()) {
+        return 0;
+    }
+
+    errno = 0;
+    char* endFloat = 0;
+    (void)std::strtod(s.c_str(), &endFloat);
+
+    if (endFloat == s.c_str() ||
+        *endFloat != '\0' ||
+        errno == ERANGE) {
+        return 0;
+    }
+
+    std::string::size_type expPos = s.find_first_of("eE");
+    std::string::size_type mantissaEnd =
+        (expPos == std::string::npos) ? s.size() : expPos;
+    std::string::size_type dotPos = s.find('.');
+
+    if (dotPos == std::string::npos || dotPos >= mantissaEnd) {
+        return 0;
+    }
+
+    size_t precision = 0;
+    for (std::string::size_type i = dotPos + 1;
+         i < mantissaEnd;
+         ++i) {
+        if (!std::isdigit((unsigned char)s[i])) {
+            return 0;
+        }
+        ++precision;
+    }
+
+    return precision;
+}
+
 const std::string Column::DataTypeName(Column::DataType t) const {
     if (t == Column::STRING) {
-        return "STRING";
+        return "CHAR";
     }
-    if (t == Column::INTEGER) {
-        return "INTEGER";
-    }
-    return "FLOAT";
+    return "DEC";
 }
 
 
