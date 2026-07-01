@@ -1,0 +1,35 @@
+             PGM        PARM(&OUTFILE &INPATH)
+             DCL        VAR(&OUTFILE) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&INPATH) TYPE(*CHAR) LEN(128)
+             DCL        VAR(&PATH) TYPE(*CHAR) LEN(128)
+             DCL        VAR(&QRY) TYPE(*CHAR) LEN(2048)
+             DCL        VAR(&SUCCESS) TYPE(*LGL)
+/* CHGVAR VAR(&INPATH) VALUE('/temp/YOSSIK/ambulance.csv') */
+/* CHGVAR VAR(&OUTFILE) VALUE('test') */
+/* ריקים csv לטפל במקרה ששם קובץ או נתיב לקובץ */
+             CALL       PGM(YOSSIK/CSVTOPF) PARM((&INPATH) (&QRY))
+/* לטפל במקרה של כישלון */
+             CALL       PGM(YOSSIK/CREATE_PF) PARM((&OUTFILE) +
+                           (&QRY) (&SUCCESS))
+             IF &SUCCESS THEN(DO)
+               CHGVAR VAR(&PATH) VALUE(' ')
+               CHGVAR VAR(&PATH) VALUE(&INPATH)
+               CPYFRMIMPF FROMSTMF(&PATH) +
+                          TOFILE(QTEMP/&OUTFILE) RCDDLM(*CRLF) +
+                          RPLNULLVAL(*FLDDFT) RMVCOLNAM(*YES)
+               ENDDO
+             ELSE
+/* לטפל במקרה של כישלון */
+
+
+
+
+
+
+
+
+
+
+
+
+  ENDPGM
